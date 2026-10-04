@@ -1,0 +1,895 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1220"><meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="MatchTracker">
+<link rel="manifest" href="manifest.json">
+<title>MatchTracker Soccer</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#f4f7fb;background:#08111d}
+*{box-sizing:border-box}body{margin:0;background:#08111d;min-height:100vh;padding-bottom:env(safe-area-inset-bottom)}
+button,input,select,textarea{font:inherit}button{border:0;border-radius:12px;padding:12px;color:#fff;background:#20334d;font-weight:750}
+button.primary{background:var(--club-home,#16834f)}button.active{outline:2px solid var(--club-accent,#62d99b);background:#235c43}button.warn{background:#a87516}button.red{background:#a93243}
+header{position:sticky;top:0;z-index:10;background:#08111deF;backdrop-filter:blur(14px);padding:12px 14px;display:flex;justify-content:space-between;align-items:center}
+h1{font-size:19px;margin:0}.sub{color:#91a2b8;font-size:12px}.tabs{position:sticky;top:58px;z-index:9;display:flex;gap:6px;padding:8px;background:#0c1726;border-bottom:1px solid #1e3047;overflow:auto}.tabs button{white-space:nowrap;padding:9px 12px}
+main{max-width:1000px;margin:auto;padding:12px}.panel{background:#101d2e;border:1px solid #20334c;border-radius:17px;padding:13px;margin-bottom:12px}.panel h2{font-size:16px;margin:0 0 11px}
+.hidden{display:none}.row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1;min-width:120px}
+input,select,textarea{width:100%;background:#16263b;color:#fff;border:1px solid #2b405c;border-radius:11px;padding:11px;outline:none}textarea{min-height:70px}
+.score{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center}.team{text-align:center;background:#13233a;border-radius:15px;padding:12px}.team input{text-align:center;background:transparent;border:0;font-weight:800;font-size:17px}.scoreNum{font-size:48px;font-weight:900;text-align:center}.clock{text-align:center;font-size:21px;font-variant-numeric:tabular-nums}
+.actions{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.actions button{min-height:55px}.event{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid #22344d;padding:9px 0;font-size:13px}.muted{color:#8fa0b5;font-size:13px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.players{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.player{background:#172941;text-align:left}.player small{display:block;color:#93a5bb;font-weight:500}
+.pitchWrap{display:flex;justify-content:center}.pitch{position:relative;width:min(92vw,680px);aspect-ratio:68/105;background:#267b45;border:4px solid #e8f3e9;border-radius:6px;overflow:hidden;touch-action:none}
+.pitch:before,.pitch:after{content:"";position:absolute;left:0;right:0;height:2px;background:#e8f3e9}.pitch:before{top:50%}.pitch:after{display:none}
+.centerCircle{position:absolute;width:23%;aspect-ratio:1;border:2px solid #e8f3e9;border-radius:50%;left:38.5%;top:38.5%}.centerDot{position:absolute;width:7px;height:7px;background:#e8f3e9;border-radius:50%;left:calc(50% - 3.5px);top:calc(50% - 3.5px)}
+.box{position:absolute;left:18%;width:64%;height:15%;border:2px solid #e8f3e9}.box.top{top:0}.box.bottom{bottom:0}
+.six{position:absolute;left:30%;width:40%;height:7%;border:2px solid #e8f3e9}.six.top{top:0}.six.bottom{bottom:0}
+.pitchHint{font-size:12px;color:#b9c9ba;text-align:center;margin:7px 0}.marker{position:absolute;width:16px;height:16px;border-radius:50%;background:#fff;border:3px solid #111;transform:translate(-50%,-50%);box-shadow:0 2px 5px #0008}
+.badge{display:inline-block;padding:3px 7px;border-radius:8px;background:#20334d;font-size:11px;margin:2px}
+.formation{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.slot{min-height:62px;border:1px dashed #40546e;border-radius:12px;padding:7px;text-align:center;color:#b6c5d7}
+@media(max-width:700px){.grid{grid-template-columns:1fr}.scoreNum{font-size:40px}.row>*{min-width:100%}}
+
+.chartGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.chartBox{background:#0c1726;border:1px solid #243850;border-radius:14px;padding:12px;min-height:250px}.chartTitle{font-weight:800;margin-bottom:3px}.chartSub{font-size:12px;color:#8fa0b5;margin-bottom:8px}.chartSvg{width:100%;height:190px;display:block}.metricGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.metric{background:#13233a;border-radius:13px;padding:12px;text-align:center}.metric b{display:block;font-size:24px}.metric span{font-size:11px;color:#8fa0b5}.heatmap{position:relative;width:min(92vw,680px);aspect-ratio:68/105;background:#16344b;border:3px solid #e8f3e9;border-radius:6px;overflow:hidden}.heatCell{position:absolute;box-sizing:border-box;border:1px solid #ffffff18}.heatLines:before,.heatLines:after{content:"";position:absolute;left:0;right:0;height:2px;background:#e8f3e9}.heatLines:before{top:50%}.heatCenter{position:absolute;width:23%;aspect-ratio:1;border:2px solid #e8f3e9;border-radius:50%;left:38.5%;top:38.5%}.legend{display:flex;gap:8px;align-items:center;font-size:11px;color:#8fa0b5;margin-top:7px}.legend i{width:13px;height:13px;border-radius:3px;display:inline-block}.barLabel{font-size:11px;fill:#cbd6e3}.barValue{font-size:11px;fill:#fff;font-weight:700}@media(max-width:700px){.chartGrid{grid-template-columns:1fr}.metricGrid{grid-template-columns:1fr 1fr}}
+
+/* Unified branding, possession and professional pitch */
+:root{--club-home:#16834f;--club-away:#20334d;--club-accent:#62d99b}
+.brand-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.brand-card{background:#13233a;border:1px solid #29415f;border-radius:14px;padding:12px}.brand-card h3{margin:0 0 8px;font-size:14px}.crest-preview{width:76px;height:76px;object-fit:contain;border-radius:14px;background:#f8fafc;border:1px solid #cbd5e1;padding:6px;display:block;margin-bottom:8px}.color-row{display:grid;grid-template-columns:1fr 70px;gap:8px;align-items:center}.color-row input[type=color]{height:44px;padding:4px}.possession-controls{display:grid;grid-template-columns:1fr 1fr;gap:10px}.possession-side{background:#13233a;border:1px solid #29415f;border-radius:14px;padding:12px}.possession-time{font-size:30px;font-weight:900;text-align:center;font-variant-numeric:tabular-nums;margin:5px 0 9px}.possession-side button{width:100%}.possession-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.possession-actions button{flex:1;min-width:120px}
+.pitch{width:min(94vw,760px);aspect-ratio:105/68;background:repeating-linear-gradient(90deg,#2e7d4a 0,#2e7d4a 8%,#347f4d 8%,#347f4d 16%);border:3px solid #fff;border-radius:8px;box-shadow:0 12px 30px #0005}
+.pitch:before{height:3px;top:0;bottom:0;left:50%;right:auto;width:3px}.pitch:after{display:block;top:50%;left:50%;width:15%;height:auto;aspect-ratio:1;border:3px solid #fff;background:transparent;border-radius:50%;transform:translate(-50%,-50%)}
+.centerCircle{display:none}.centerDot{width:8px;height:8px;left:calc(50% - 4px);top:calc(50% - 4px)}
+.box{left:0;width:16%;height:58%;top:21%;border:3px solid #fff}.box.bottom{left:auto;right:0;bottom:21%;top:auto}.six{left:0;width:6%;height:28%;top:36%;border:3px solid #fff}.six.bottom{left:auto;right:0;bottom:36%;top:auto}
+.pitch .penaltyArc{position:absolute;width:15%;aspect-ratio:1;border:3px solid #fff;border-radius:50%;left:8%;top:50%;transform:translate(-50%,-50%);clip-path:inset(0 0 0 50%)}
+.pitch .penaltyArc.away{left:auto;right:8%;transform:translate(50%,-50%) scaleX(-1)}
+.pitch .goal{position:absolute;top:42%;width:2%;height:16%;border:3px solid #fff}.pitch .goal.home{left:-2%}.pitch .goal.away{right:-2%}
+.marker{width:22px;height:22px;background:var(--club-accent);border:3px solid #0b1220;box-shadow:0 3px 9px #0008}
+.mt-dashboard-pitch-host .pitch{width:100%;max-width:760px;margin:auto}
+@media(max-width:700px){.brand-grid,.possession-controls{grid-template-columns:1fr}}
+</style>
+<style id="final-custom-events-css">
+#mtCustomStatsPanel{margin-top:16px}
+#mtCustomStatsPanel .mt-stat-row{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid rgba(127,127,127,.2)}
+#mtCustomStatsPanel .mt-pill{font-size:.82em;padding:4px 8px;border-radius:999px;background:rgba(127,127,127,.14)}
+#mtEventModal[hidden]{display:none!important}
+#mtEventModal{position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.58);display:flex;align-items:flex-end;justify-content:center}
+#mtEventModal .mt-sheet{background:var(--panel,#fff);color:inherit;width:min(760px,100%);max-height:94vh;overflow:auto;border-radius:18px 18px 0 0;padding:16px}
+#mtEventModal label{display:grid;gap:5px;font-weight:600;margin:8px 0}
+#mtEventModal select,#mtEventModal input,#mtEventModal button{font:inherit;padding:9px;border-radius:8px}
+#mtPitch{position:relative;width:100%;aspect-ratio:105/68;border:2px solid rgba(255,255,255,.85);border-radius:10px;overflow:hidden;background:linear-gradient(90deg,#398448,#4b9a58);touch-action:none}
+#mtPitch:before{content:"";position:absolute;inset:4%;border:2px solid rgba(255,255,255,.8)}
+#mtMarker{position:absolute;width:16px;height:16px;border-radius:50%;background:#ffe000;border:2px solid #111;transform:translate(-50%,-50%);display:none;pointer-events:none}
+#mtPassSvg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.mt-pass-line{stroke:#ffe000;stroke-width:.9;marker-end:url(#mtArrow)}
+@media(max-width:600px){#mtCustomStatsPanel .mt-stat-row{grid-template-columns:1fr 1fr}.mt-sheet{font-size:16px}}
+</style>
+
+<style id="analyst-dashboard-css">
+/* Professional analyst dashboard */
+:root{
+  --dash-card:rgba(255,255,255,.94);
+  --dash-border:rgba(15,23,42,.10);
+  --dash-muted:#64748b;
+  --dash-text:#0f172a;
+  --dash-radius:18px;
+}
+.mt-dashboard{
+  display:grid;
+  gap:14px;
+  margin:14px 0 18px;
+}
+.mt-dashboard-hero{
+  display:grid;
+  grid-template-columns:1fr auto 1fr;
+  align-items:center;
+  gap:18px;
+  padding:18px 20px;
+  border:1px solid var(--dash-border);
+  border-radius:var(--dash-radius);
+  background:var(--dash-card);
+  box-shadow:0 8px 28px rgba(15,23,42,.07);
+}
+.mt-team-card{display:flex;align-items:center;gap:14px;min-width:0}
+.mt-team-card.away{justify-content:flex-end;text-align:right}
+.mt-team-copy{min-width:0}
+.mt-team-name{font-size:clamp(16px,2.4vw,24px);font-weight:800;letter-spacing:-.02em;color:var(--dash-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mt-team-label{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--dash-muted);margin-bottom:3px}
+.mt-crest{
+  width:64px;height:64px;border-radius:16px;object-fit:contain;
+  background:#f8fafc;border:1px solid var(--dash-border);padding:6px;flex:none;
+}
+.mt-score-block{text-align:center;min-width:160px}
+.mt-score{font-size:clamp(32px,5vw,48px);font-weight:900;line-height:1;color:var(--dash-text);letter-spacing:-.04em}
+.mt-match-status{margin-top:7px;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--dash-muted)}
+.mt-dashboard-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1.6fr) minmax(280px,.8fr);
+  gap:14px;
+}
+.mt-dashboard-card{
+  background:var(--dash-card);border:1px solid var(--dash-border);
+  border-radius:var(--dash-radius);padding:16px;
+  box-shadow:0 8px 28px rgba(15,23,42,.05);
+}
+.mt-card-title{font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.12em;color:var(--dash-muted);margin-bottom:12px}
+.mt-live-row{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px}
+.mt-live-clock{text-align:center;font-size:30px;font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.mt-live-side{display:flex;align-items:center;gap:10px}
+.mt-live-side.away{justify-content:flex-end}
+.mt-live-pill{padding:7px 10px;border-radius:999px;background:#f1f5f9;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+.mt-live-dot{width:9px;height:9px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 4px rgba(34,197,94,.12)}
+.mt-possession-dashboard{display:grid;gap:11px}
+.mt-pos-row{display:grid;grid-template-columns:72px 1fr 58px;align-items:center;gap:10px}
+.mt-pos-name{font-size:12px;font-weight:800}
+.mt-pos-value{text-align:right;font-size:13px;font-weight:900;font-variant-numeric:tabular-nums}
+.mt-pos-track{height:9px;background:#e2e8f0;border-radius:999px;overflow:hidden}
+.mt-pos-fill{height:100%;width:50%;border-radius:999px;transition:width .3s ease}
+.mt-key-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+.mt-key-stat{padding:12px;border-radius:14px;background:#f8fafc;border:1px solid rgba(15,23,42,.07)}
+.mt-key-stat-value{font-size:23px;font-weight:900;line-height:1.1}
+.mt-key-stat-label{margin-top:4px;font-size:10px;font-weight:800;color:var(--dash-muted);text-transform:uppercase;letter-spacing:.07em}
+.mt-dashboard-pitch-wrap{padding:0}
+.mt-dashboard-pitch-wrap .mt-card-title{padding:16px 16px 0}
+.mt-dashboard-pitch-host{min-height:180px;padding:0 12px 12px}
+.mt-dashboard-actions{display:flex;flex-wrap:wrap;gap:8px}
+.mt-dashboard-actions button{border-radius:12px!important}
+@media(max-width:820px){
+  .mt-dashboard-hero{grid-template-columns:1fr;gap:12px;text-align:center}
+  .mt-team-card,.mt-team-card.away{justify-content:center;text-align:center}
+  .mt-team-card.away{flex-direction:row-reverse}
+  .mt-dashboard-grid{grid-template-columns:1fr}
+  .mt-key-stats{grid-template-columns:repeat(2,1fr)}
+  .mt-live-row{grid-template-columns:1fr}
+  .mt-live-side,.mt-live-side.away{justify-content:center}
+}
+</style>
+
+
+<style id="mt-professional-report-css">
+.mt-report-tools{
+  display:flex;flex-wrap:wrap;gap:9px;align-items:center;
+  margin:14px 0;padding:14px 16px;background:rgba(255,255,255,.94);
+  border:1px solid rgba(15,23,42,.10);border-radius:16px;
+  box-shadow:0 6px 22px rgba(15,23,42,.05)
+}
+.mt-report-tools button{
+  border:0!important;border-radius:11px!important;padding:10px 14px!important;
+  font-weight:800!important;cursor:pointer
+}
+.mt-report-note{font-size:12px;color:#64748b;flex:1;min-width:220px}
+#mtReportPrintRoot{display:none}
+
+@media print{
+  body.mt-printing > *:not(#mtReportPrintRoot){display:none!important}
+  body.mt-printing #mtReportPrintRoot{display:block!important}
+  @page{size:A4;margin:12mm}
+  #mtReportPrintRoot{font-family:Arial,Helvetica,sans-serif;color:#0f172a;background:white}
+  .mt-rp-page{page-break-after:always;min-height:270mm;position:relative}
+  .mt-rp-page:last-child{page-break-after:auto}
+  .mt-rp-header{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #0f172a;padding-bottom:10px;margin-bottom:16px}
+  .mt-rp-brand{display:flex;align-items:center;gap:12px}
+  .mt-rp-crest{width:54px;height:54px;object-fit:contain;border:1px solid #e2e8f0;border-radius:10px;padding:4px}
+  .mt-rp-title{font-size:24px;font-weight:900;letter-spacing:-.03em}
+  .mt-rp-sub{font-size:11px;color:#64748b;margin-top:3px}
+  .mt-rp-meta{text-align:right;font-size:11px;color:#475569;line-height:1.5}
+  .mt-rp-score{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:18px;text-align:center;padding:20px 0}
+  .mt-rp-team{font-size:19px;font-weight:900}
+  .mt-rp-score-num{font-size:42px;font-weight:900}
+  .mt-rp-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0 18px}
+  .mt-rp-kpi{border:1px solid #e2e8f0;border-radius:10px;padding:10px;background:#f8fafc}
+  .mt-rp-kpi-value{font-size:22px;font-weight:900}
+  .mt-rp-kpi-label{font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:.08em;font-weight:800;margin-top:3px}
+  .mt-rp-section{margin:16px 0}
+  .mt-rp-section h2{font-size:14px;text-transform:uppercase;letter-spacing:.1em;border-bottom:1px solid #cbd5e1;padding-bottom:6px;margin:0 0 9px}
+  .mt-rp-grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .mt-rp-table{width:100%;border-collapse:collapse;font-size:10px}
+  .mt-rp-table th{text-align:left;background:#0f172a;color:white;padding:6px}
+  .mt-rp-table td{padding:6px;border-bottom:1px solid #e2e8f0}
+  .mt-rp-table td.num,.mt-rp-table th.num{text-align:right}
+  .mt-rp-bar{height:10px;background:#e2e8f0;border-radius:99px;overflow:hidden;margin:5px 0}
+  .mt-rp-bar-fill{height:100%}
+  .mt-rp-small{font-size:9px;color:#64748b}
+  .mt-rp-footer{position:absolute;bottom:0;left:0;right:0;border-top:1px solid #e2e8f0;padding-top:6px;font-size:8px;color:#94a3b8;display:flex;justify-content:space-between}
+  .mt-rp-chart{border:1px solid #e2e8f0;border-radius:10px;padding:10px;margin-bottom:12px}
+  .mt-rp-chart-title{font-size:11px;font-weight:900;margin-bottom:7px}
+  .mt-rp-chart svg{width:100%;height:auto;display:block}
+  .mt-rp-pitch{border:1px solid #cbd5e1;border-radius:8px;overflow:hidden;position:relative;background:#f8fafc}
+  .mt-rp-pitch svg{display:block;width:100%;height:auto}
+}
+</style>
+
+</head>
+<body>
+
+
+<div class="mt-report-tools" id="mtReportTools">
+  <button type="button" id="mtGenerateReport">Generate Professional PDF Report</button>
+  <button type="button" id="mtGenerateSummaryReport">Generate Executive Summary</button>
+  <div class="mt-report-note">Reports include the recorded match data, team crests, possession, player/event statistics, charts and pitch-based analysis. The report uses the data currently stored in this browser.</div>
+</div>
+
+<section class="mt-dashboard" id="mtAnalystDashboard" aria-label="Live analyst dashboard">
+  <div class="mt-dashboard-hero">
+    <div class="mt-team-card">
+      <img class="mt-crest" id="mtDashHomeCrest" alt="Home crest" hidden>
+      <div class="mt-team-copy">
+        <div class="mt-team-label">Home</div>
+        <div class="mt-team-name" id="mtDashHomeName">Home Team</div>
+      </div>
+    </div>
+    <div class="mt-score-block">
+      <div class="mt-score"><span id="mtDashHomeScore">0</span><span> – </span><span id="mtDashAwayScore">0</span></div>
+      <div class="mt-match-status" id="mtDashStatus">Ready</div>
+    </div>
+    <div class="mt-team-card away">
+      <div class="mt-team-copy">
+        <div class="mt-team-label">Away</div>
+        <div class="mt-team-name" id="mtDashAwayName">Away Team</div>
+      </div>
+      <img class="mt-crest" id="mtDashAwayCrest" alt="Away crest" hidden>
+    </div>
+  </div>
+
+  <div class="mt-dashboard-grid">
+    <div class="mt-dashboard-card">
+      <div class="mt-card-title">Live Match</div>
+      <div class="mt-live-row">
+        <div class="mt-live-side"><span class="mt-live-dot"></span><span class="mt-live-pill" id="mtDashHalf">1st Half</span></div>
+        <div class="mt-live-clock" id="mtDashClock">00:00</div>
+        <div class="mt-live-side away"><span class="mt-live-pill">Live Analysis</span></div>
+      </div>
+      <div style="height:14px"></div>
+      <div class="mt-key-stats">
+        <div class="mt-key-stat"><div class="mt-key-stat-value" id="mtDashPasses">0</div><div class="mt-key-stat-label">Passes</div></div>
+        <div class="mt-key-stat"><div class="mt-key-stat-value" id="mtDashShots">0</div><div class="mt-key-stat-label">Shots</div></div>
+        <div class="mt-key-stat"><div class="mt-key-stat-value" id="mtDashTurnovers">0</div><div class="mt-key-stat-label">Turnovers</div></div>
+        <div class="mt-key-stat"><div class="mt-key-stat-value" id="mtDashEvents">0</div><div class="mt-key-stat-label">Events</div></div>
+      </div>
+    </div>
+
+    <div class="mt-dashboard-card">
+      <div class="mt-card-title">Possession</div>
+      <div class="mt-possession-dashboard">
+        <div class="mt-pos-row">
+          <div class="mt-pos-name">Home</div>
+          <div class="mt-pos-track"><div class="mt-pos-fill" id="mtDashHomePosFill"></div></div>
+          <div class="mt-pos-value" id="mtDashHomePos">50%</div>
+        </div>
+        <div class="mt-pos-row">
+          <div class="mt-pos-name">Away</div>
+          <div class="mt-pos-track"><div class="mt-pos-fill" id="mtDashAwayPosFill"></div></div>
+          <div class="mt-pos-value" id="mtDashAwayPos">50%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-dashboard-card mt-dashboard-pitch-wrap">
+    <div class="mt-card-title">Live Pitch</div>
+    <div class="mt-dashboard-pitch-host" id="mtDashPitchHost"></div>
+  </div>
+</section>
+
+
+<header><div><h1>MatchTracker</h1><div class="sub">Soccer performance tracker</div></div><button onclick="exportMatch()">Export</button></header>
+<nav class="tabs">
+<button onclick="tab('setup')" id="tsetup">Setup</button><button onclick="tab('match')" id="tmatch">Live Match</button><button onclick="tab('pitch')" id="tpitch">Pitch</button><button onclick="tab('analytics')" id="tanalytics">Analytics</button><button onclick="tab('players')" id="tplayers">Players</button><button onclick="tab('report')" id="treport">Report</button>
+</nav>
+<main>
+<section id="setup" class="view">
+<div class="panel"><h2>Match setup</h2><div class="row"><input id="homeName" value="Home Team" placeholder="Home team"><input id="awayName" value="Away Team" placeholder="Away team"></div><div class="row" style="margin-top:8px"><input id="competition" placeholder="Competition"><input id="venue" placeholder="Venue"></div><div class="row" style="margin-top:8px"><input id="matchDate" type="date"><select id="duration"><option value="90">90 minutes</option><option value="80">80 minutes</option><option value="70">70 minutes</option><option value="60">60 minutes</option></select></div></div>
+<div class="grid"><div class="panel"><h2>Home lineup</h2><div id="homeLineup"></div></div><div class="panel"><h2>Away lineup</h2><div id="awayLineup"></div></div></div>
+<div class="panel"><h2>Formation</h2><div class="row"><select id="formation"><option>4-3-3</option><option>4-4-2</option><option>4-2-3-1</option><option>3-5-2</option><option>3-4-3</option><option>5-3-2</option></select><button class="primary" onclick="saveSetup()">Save setup</button></div></div>
+<div class="panel"><h2>Club branding</h2><div class="brand-grid">
+ <div class="brand-card"><h3>Home club</h3><img id="homeCrestPreview" class="crest-preview" alt="Home crest"><input id="homeCrestFile" type="file" accept="image/*"><div class="color-row" style="margin-top:8px"><label>Home colour</label><input id="homeColour" type="color" value="#16834f"></div></div>
+ <div class="brand-card"><h3>Away club</h3><img id="awayCrestPreview" class="crest-preview" alt="Away crest"><input id="awayCrestFile" type="file" accept="image/*"><div class="color-row" style="margin-top:8px"><label>Away colour</label><input id="awayColour" type="color" value="#20334d"></div></div>
+ </div><div class="row" style="margin-top:10px"><div class="color-row"><label>Accent colour</label><input id="accentColour" type="color" value="#62d99b"></div><button class="primary" type="button" onclick="saveBranding()">Save branding</button></div>
+</div>
+<div class="panel"><h2>Possession timer</h2><div class="possession-controls">
+ <div class="possession-side"><strong id="possHomeName">Home Team</strong><div class="possession-time" id="possHomeTime">00:00</div><button type="button" class="primary" onclick="togglePossession('home')">Start Home</button></div>
+ <div class="possession-side"><strong id="possAwayName">Away Team</strong><div class="possession-time" id="possAwayTime">00:00</div><button type="button" onclick="togglePossession('away')">Start Away</button></div>
+ </div><div class="possession-actions"><button type="button" onclick="pausePossession()">Pause</button><button type="button" onclick="resetPossession()">Reset</button><span class="muted" id="possStatus">Paused</span></div>
+</div>
+</section>
+
+<section id="match" class="view hidden">
+<div class="panel"><div class="score"><div class="team"><input id="homeDisplay"><div class="scoreNum" id="hs">0</div></div><div><div class="scoreNum">–</div><div class="clock" id="clock">00:00</div></div><div class="team"><input id="awayDisplay"><div class="scoreNum" id="as">0</div></div></div>
+<div class="row" style="margin-top:10px"><button class="primary" id="startBtn" onclick="toggleClock()">Start</button><button onclick="newHalf()">Next half</button><button onclick="undo()">Undo</button><button class="red" onclick="finish()">Finish</button></div></div>
+<div class="grid"><div class="panel"><h2>Record event</h2><select id="eventTeam" onchange="refreshEventPlayers()"></select><select id="eventPlayer"><option>Team event</option></select><div class="actions">
+<button class="primary" onclick="addEvent('Goal','',true)">Goal</button><button onclick="addEvent('Shot on target','')">Shot on target</button><button onclick="addEvent('Shot off target','')">Shot off target</button><button onclick="addEvent('Key pass','')">Key pass</button><button onclick="addEvent('Pass complete','')">Pass complete</button><button onclick="addEvent('Pass incomplete','')">Pass incomplete</button><button onclick="addEvent('Tackle won','')">Tackle won</button><button onclick="addEvent('Interception','')">Interception</button><button onclick="addEvent('Foul','')">Foul</button><button class="warn" onclick="addEvent('Yellow card','')">Yellow card</button><button class="red" onclick="addEvent('Red card','')">Red card</button><button onclick="addEvent('Save','')">Save</button><button onclick="addEvent('Substitution','')">Substitution</button></div></div>
+<div class="panel"><h2>Live events</h2><div id="events"></div></div></div>
+</section>
+
+<section id="pitch" class="view hidden"><div class="panel"><h2>Interactive pitch</h2><div class="row"><select id="pitchTeam" onchange="refreshPitchPlayers()"></select><select id="pitchPlayer"><option>Select player</option></select></div><div class="row" style="margin:8px 0"><select id="pitchEvent"><option>Shot</option><option>Pass</option><option>Cross</option><option>Tackle</option><option>Interception</option><option>Foul</option><option>Chance created</option><option>Turnover</option></select><button class="primary" onclick="armPitch()">Tap pitch to record</button><button onclick="clearMarkers()">Clear markers</button></div><div class="pitchHint" id="pitchHint">Choose player/event, then tap the pitch.</div><div class="pitchWrap"><div class="pitch" id="pitchBoard" onclick="pitchTap(event)"><div class="centerCircle"></div><div class="centerDot"></div><div class="box top"></div><div class="box bottom"></div><div class="six top"></div><div class="six bottom"></div><div class="penaltyArc"></div><div class="penaltyArc away"></div><div class="goal home"></div><div class="goal away"></div></div></div></div></section>
+
+
+<section id="analytics" class="view hidden">
+<div class="panel">
+<h2>Performance analytics</h2>
+<div class="sub">Charts update automatically from the match events you record.</div>
+<div class="metricGrid" id="metricGrid" style="margin-top:10px"></div>
+</div>
+<div class="chartGrid">
+  <div class="chartBox"><div class="chartTitle">Shots</div><div class="chartSub">On target vs off target</div><div id="shotChart"></div></div>
+  <div class="chartBox"><div class="chartTitle">Passing</div><div class="chartSub">Completed vs incomplete</div><div id="passChart"></div></div>
+  <div class="chartBox"><div class="chartTitle">Defensive actions</div><div class="chartSub">Tackles and interceptions</div><div id="defChart"></div></div>
+  <div class="chartBox"><div class="chartTitle">Goals and chances</div><div class="chartSub">Key passes and goals by team</div><div id="chanceChart"></div></div>
+</div>
+<div class="panel">
+<h2>Player contributions</h2>
+<div class="chartSub">Top contributors by recorded actions. Switch teams to compare individual involvement.</div>
+<div class="row" style="margin-bottom:8px"><select id="analyticsTeam" onchange="renderAnalytics()"><option value="home">Home Team</option><option value="away">Away Team</option></select></div>
+<div id="playerChart"></div>
+</div>
+<div class="panel">
+<h2>Pitch key areas</h2>
+<div class="chartSub">Action density from events recorded on the interactive pitch.</div>
+<div class="pitchWrap"><div class="heatmap" id="heatmap"><div class="heatLines"></div><div class="heatCenter"></div></div></div>
+<div class="legend"><i style="background:#183b55"></i>Low <i style="background:#5b8c6b"></i>Medium <i style="background:#d9a441"></i>High</div>
+</div>
+</section>
+
+<section id="players" class="view hidden"><div class="panel"><h2>Squads & player profiles</h2><div class="row"><select id="playerTeam" onchange="renderPlayers()"><option value="home">Home Team</option><option value="away">Away Team</option></select><button class="primary" onclick="addPlayer()">Add player</button></div><div class="players" id="playerList" style="margin-top:10px"></div></div>
+<div class="panel"><h2>Player profile</h2><div id="profileEmpty" class="muted">Select a player to edit their profile.</div><div id="profile" class="hidden"><div class="row"><input id="pName" placeholder="Name"><input id="pNumber" type="number" placeholder="Shirt no."><input id="pPosition" placeholder="Position"></div><div class="row" style="margin-top:8px"><input id="pDOB" type="date"><input id="pFoot" placeholder="Preferred foot"><input id="pEmail" placeholder="Contact (optional)"></div><textarea id="pNotes" placeholder="Notes" style="margin-top:8px"></textarea><button class="primary" onclick="savePlayerProfile()" style="margin-top:8px">Save player</button></div></div></section>
+
+<section id="report" class="view hidden"><div class="panel"><h2>Match summary</h2><div id="reportBody"></div><button class="primary" onclick="exportCSV()">Export CSV</button></div></section>
+</main>
+<script>
+const KEY='matchtracker_v2';
+let S={homeName:'Home Team',awayName:'Away Team',competition:'',venue:'',date:'',duration:90,formation:'4-3-3',home:[],away:[],events:[],markers:[],score:{home:0,away:0},seconds:0,half:1,running:false};
+let possession={home:0,away:0,active:null,running:false};let possessionTimer=null;
+window.matchData=S;window.MatchTracker={getState:()=>S,getBranding:()=>loadBranding(),getPossession:()=>possession};
+let timer=null,armed=false,selectedProfile=null;
+const $=x=>document.getElementById(x);
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+function save(){localStorage.setItem(KEY,JSON.stringify(S));window.matchData=S;document.dispatchEvent(new CustomEvent('matchtracker:state',{detail:S}))}
+function load(){try{const x=JSON.parse(localStorage.getItem(KEY));if(x)S={...S,...x}}catch(e){}; window.matchData=S; loadBranding(); loadPossession(); $('homeName').value=S.homeName;$('awayName').value=S.awayName;$('competition').value=S.competition;$('venue').value=S.venue;$('matchDate').value=S.date;$('duration').value=S.duration;$('formation').value=S.formation;renderAll()}
+function tab(id){document.querySelectorAll('.view').forEach(x=>x.classList.add('hidden'));$(id).classList.remove('hidden');document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('active'));$('t'+id).classList.add('active');if(id==='report')renderReport();if(id==='players')renderPlayers();if(id==='setup')renderLineups();scrollTo(0,0)}
+function saveSetup(){S.homeName=$('homeName').value||'Home Team';S.awayName=$('awayName').value||'Away Team';S.competition=$('competition').value;S.venue=$('venue').value;S.date=$('matchDate').value;S.duration=+$('duration').value;S.formation=$('formation').value;window.matchData=S;save();renderAll();document.dispatchEvent(new CustomEvent('matchtracker:state',{detail:S}));tab('match')}
+function loadBranding(){try{return JSON.parse(localStorage.getItem('matchtracker_branding_v1')||'{}')}catch(e){return{}}}
+function saveBranding(){
+ const b=loadBranding();b.homeColour=$('homeColour').value;b.awayColour=$('awayColour').value;b.accentColour=$('accentColour').value;
+ const files=[['homeCrestFile','homeCrest'],['awayCrestFile','awayCrest']];
+ let pending=0;files.forEach(([id,key])=>{const f=$(id)?.files?.[0];if(f){pending++;const r=new FileReader();r.onload=()=>{b[key]=r.result;pending--;localStorage.setItem('matchtracker_branding_v1',JSON.stringify(b));if(!pending)applyBranding(b)};r.readAsDataURL(f)}});
+ localStorage.setItem('matchtracker_branding_v1',JSON.stringify(b));if(!pending)applyBranding(b);
+}
+function applyBranding(b=loadBranding()){
+ document.documentElement.style.setProperty('--club-home',b.homeColour||'#16834f');document.documentElement.style.setProperty('--club-away',b.awayColour||'#20334d');document.documentElement.style.setProperty('--club-accent',b.accentColour||'#62d99b');
+ ['home','away'].forEach(t=>{const img=$(t+'CrestPreview'),src=b[t+'Crest'];if(img){img.src=src||'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';img.style.opacity=src?'1':'.35'}});
+ document.documentElement.style.setProperty('--dash-home',b.homeColour||'#16834f');document.documentElement.style.setProperty('--dash-away',b.awayColour||'#20334d');
+ document.dispatchEvent(new CustomEvent('matchtracker:branding',{detail:b}));
+}
+function loadPossession(){try{const p=JSON.parse(localStorage.getItem('matchtracker_possession_v1')||'{}');possession={home:+p.home||0,away:+p.away||0,active:p.active||null,running:!!p.running}}catch(e){possession={home:0,away:0,active:null,running:false}};renderPossession()}
+function savePossession(){localStorage.setItem('matchtracker_possession_v1',JSON.stringify(possession));document.dispatchEvent(new CustomEvent('matchtracker:possession',{detail:possession}))}
+function fmtPoss(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(Math.floor(s%60)).padStart(2,'0')}
+function renderPossession(){if(!$('possHomeTime'))return;$('possHomeTime').textContent=fmtPoss(possession.home);$('possAwayTime').textContent=fmtPoss(possession.away);$('possHomeName').textContent=S.homeName;$('possAwayName').textContent=S.awayName;$('possStatus').textContent=possession.running?(possession.active==='home'?S.homeName:S.awayName)+' possession':'Paused'}
+function togglePossession(side){if(possession.running&&possession.active===side){pausePossession();return}possession.active=side;possession.running=true;if(!possessionTimer)possessionTimer=setInterval(()=>{if(possession.running&&possession.active)possession[possession.active]++;renderPossession()},1000);savePossession();renderPossession()}
+function pausePossession(){possession.running=false;savePossession();renderPossession()}
+function resetPossession(){possession={home:0,away:0,active:null,running:false};clearInterval(possessionTimer);possessionTimer=null;savePossession();renderPossession()}
+function renderAll(){ $('homeDisplay').value=S.homeName;$('awayDisplay').value=S.awayName; $('hs').textContent=S.score.home;$('as').textContent=S.score.away;$('clock').textContent=fmt(S.seconds);renderLineups();refreshEventPlayers();renderEvents();renderPlayers();renderPitchSelects();drawMarkers();renderReport();renderAnalytics();applyBranding();renderPossession();const b=loadBranding();if($('homeColour')){$('homeColour').value=b.homeColour||'#16834f';$('awayColour').value=b.awayColour||'#20334d';$('accentColour').value=b.accentColour||'#62d99b';}applyBranding(b)}
+function renderLineups(){['home','away'].forEach(t=>{$(t+'Lineup').innerHTML=S[t].length?S[t].map((p,i)=>`<div class="row" style="margin-bottom:6px"><select onchange="setRole('${t}',${i},this.value)"><option ${p.status==='starter'?'selected':''} value="starter">Starter</option><option ${p.status==='sub'?'selected':''} value="sub">Sub</option><option ${p.status==='inactive'?'selected':''} value="inactive">Inactive</option></select><button onclick="profileFrom('${t}','${p.id}')">${p.number?('#'+p.number+' '):''}${esc(p.name)}</button></div>`).join(''):'<div class="muted">Add players in Players.</div>'})}
+function addPlayer(){const side=$('playerTeam').value;const name=prompt('Player name');if(!name)return;S[side].push({id:uid(),name,number:'',position:'',dob:'',foot:'',email:'',notes:'',status:'sub'});save();renderAll()}
+function profileFrom(side,id){selectedProfile={side,id};const p=S[side].find(x=>x.id===id);$('profileEmpty').classList.add('hidden');$('profile').classList.remove('hidden');$('pName').value=p.name;$('pNumber').value=p.number;$('pPosition').value=p.position;$('pDOB').value=p.dob;$('pFoot').value=p.foot;$('pEmail').value=p.email;$('pNotes').value=p.notes}
+function savePlayerProfile(){if(!selectedProfile)return;const p=S[selectedProfile.side].find(x=>x.id===selectedProfile.id);Object.assign(p,{name:$('pName').value,number:$('pNumber').value,position:$('pPosition').value,dob:$('pDOB').value,foot:$('pFoot').value,email:$('pEmail').value,notes:$('pNotes').value});save();renderAll()}
+function renderPlayers(){const side=$('playerTeam').value;$('playerList').innerHTML=S[side].length?S[side].map(p=>`<button class="player" onclick="profileFrom('${side}','${p.id}')">${p.number?'#'+p.number+' ':''}${esc(p.name)}<small>${esc(p.position||'Position not set')} · ${p.status==='starter'?'Starter':'Sub'}</small></button>`).join(''):'<div class="muted">No players yet.</div>'}
+function setRole(side,i,v){S[side][i].status=v;save();renderAll()}
+function refreshEventPlayers(){const side=$('eventTeam').value==='home'?'home':'away';$('eventPlayer').innerHTML='<option value="">Team event</option>'+S[side].filter(p=>p.status!=='inactive').map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('')}
+function refreshPitchPlayers(){const side=$('pitchTeam').value;$('pitchPlayer').innerHTML='<option value="">Select player</option>'+S[side].filter(p=>p.status!=='inactive').map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('')}
+function renderPitchSelects(){$('pitchTeam').innerHTML=`<option value="home">${esc(S.homeName)}</option><option value="away">${esc(S.awayName)}</option>`;refreshPitchPlayers()}
+function addEvent(type,icon,score=false,x=null,y=null){const side=$('eventTeam').value;const pid=$('eventPlayer').value;const p=(S[side]||[]).find(z=>z.id===pid);S.events.push({id:uid(),type,icon,team:side,player:p?.name||'',time:S.seconds,half:S.half,x,y});if(score)S.score[side]++;save();renderAll()}
+function pitchTap(e){if(!armed)return;const r=$('pitchBoard').getBoundingClientRect();const x=(e.clientX-r.left)/r.width*100,y=(e.clientY-r.top)/r.height*100;const side=$('pitchTeam').value,pid=$('pitchPlayer').value,type=$('pitchEvent').value,p=S[side].find(z=>z.id===pid);S.markers.push({id:uid(),x,y,team:side,player:p?.name||'',type,time:S.seconds});S.events.push({id:uid(),type,icon:'',team:side,player:p?.name||'',time:S.seconds,half:S.half,x,y});armed=false;$('pitchHint').textContent='Marker recorded. Arm again for another event.';save();renderAll()}
+function armPitch(){armed=true;$('pitchHint').textContent='Now tap the location on the pitch.'}
+function drawMarkers(){document.querySelectorAll('.marker').forEach(x=>x.remove());S.markers.forEach(m=>{const d=document.createElement('div');d.className='marker';d.style.left=m.x+'%';d.style.top=m.y+'%';d.title=m.type+' · '+m.player;$('pitchBoard').appendChild(d)})}
+function clearMarkers(){S.markers=[];S.events=S.events.filter(e=>e.x==null);save();renderAll()}
+function renderEvents(){$('events').innerHTML=S.events.length?S.events.slice().reverse().map(e=>`<div class="event"><span><b>${esc(e.type)}</b><br><small>${e.team==='home'?esc(S.homeName):esc(S.awayName)}${e.player?' · '+esc(e.player):''}${e.x!=null?' · pitch':''}</small></span><small>${e.half}H ${fmt(e.time)}</small></div>`).join(''):'<div class="muted">No events yet.</div>'}
+function toggleClock(){S.running=!S.running;$('startBtn').textContent=S.running?'Pause':'Start';if(S.running)timer=setInterval(()=>{S.seconds++;renderAll()},1000);else clearInterval(timer);save()}
+function newHalf(){S.half++;S.seconds=0;save();renderAll()}
+function undo(){const e=S.events.pop();if(e?.type==='Goal')S.score[e.team]=Math.max(0,S.score[e.team]-1);if(e?.x!=null)S.markers.pop();save();renderAll()}
+function finish(){S.running=false;clearInterval(timer);save();tab('report')}
+function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
+
+function svgBar(title, items, maxVal){
+  const W=520,H=190,left=34,right=12,top=14,bottom=32;
+  const plotW=W-left-right, plotH=H-top-bottom;
+  const gap=10, n=items.length, bw=Math.max(14,(plotW-gap*(n-1))/Math.max(n,1));
+  const max=Math.max(1,maxVal||0);
+  let s=`<svg class="chartSvg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(title)}">`;
+  s+=`<line x1="${left}" y1="${top+plotH}" x2="${W-right}" y2="${top+plotH}" stroke="#40546e"/>`;
+  items.forEach((it,i)=>{
+    const x=left+i*(bw+gap), h=(it.value/max)*plotH, y=top+plotH-h;
+    s+=`<rect x="${x}" y="${y}" width="${bw}" height="${Math.max(1,h)}" rx="5" fill="${it.fill||'#4f9d72'}"/>`;
+    s+=`<text class="barValue" x="${x+bw/2}" y="${Math.max(12,y-5)}" text-anchor="middle">${it.value}</text>`;
+    s+=`<text class="barLabel" x="${x+bw/2}" y="${H-10}" text-anchor="middle">${esc(it.label)}</text>`;
+  });
+  return s+"</svg>";
+}
+function teamCounts(team){
+  const ev=S.events.filter(e=>e.team===team);
+  const c={};ev.forEach(e=>c[e.type]=(c[e.type]||0)+1);return c;
+}
+function renderAnalytics(){
+  const hc=teamCounts('home'), ac=teamCounts('away');
+  const shotsH=(hc['Shot on target']||0)+(hc['Shot off target']||0);
+  const shotsA=(ac['Shot on target']||0)+(ac['Shot off target']||0);
+  const passH=(hc['Pass complete']||0)+(hc['Pass incomplete']||0);
+  const passA=(ac['Pass complete']||0)+(ac['Pass incomplete']||0);
+  const totalPass=passH+passA, completed=(hc['Pass complete']||0)+(ac['Pass complete']||0);
+  const passPct=totalPass?Math.round(completed/totalPass*100):0;
+  $('metricGrid').innerHTML=[
+    ['Goals',S.score.home+' – '+S.score.away],
+    ['Shots',(shotsH+shotsA)],
+    ['Pass completion',passPct+'%'],
+    ['Pitch actions',S.events.filter(e=>e.x!=null).length]
+  ].map(x=>`<div class="metric"><b>${esc(x[1])}</b><span>${esc(x[0])}</span></div>`).join('');
+  $('shotChart').innerHTML=svgBar('Shots',[
+    {label:'H on',value:hc['Shot on target']||0},{label:'H off',value:hc['Shot off target']||0},
+    {label:'A on',value:ac['Shot on target']||0},{label:'A off',value:ac['Shot off target']||0}
+  ],Math.max(shotsH,shotsA,1));
+  $('passChart').innerHTML=svgBar('Passing',[
+    {label:'H comp',value:hc['Pass complete']||0},{label:'H miss',value:hc['Pass incomplete']||0},
+    {label:'A comp',value:ac['Pass complete']||0},{label:'A miss',value:ac['Pass incomplete']||0}
+  ],Math.max(passH,passA,1));
+  $('defChart').innerHTML=svgBar('Defensive actions',[
+    {label:'H tack',value:hc['Tackle won']||0},{label:'H int',value:hc['Interception']||0},
+    {label:'A tack',value:ac['Tackle won']||0},{label:'A int',value:ac['Interception']||0}
+  ],Math.max((hc['Tackle won']||0)+(hc['Interception']||0),(ac['Tackle won']||0)+(ac['Interception']||0),1));
+  $('chanceChart').innerHTML=svgBar('Goals and chances',[
+    {label:'H goal',value:hc['Goal']||0},{label:'H key',value:hc['Key pass']||0},
+    {label:'A goal',value:ac['Goal']||0},{label:'A key',value:ac['Key pass']||0}
+  ],Math.max(hc['Goal']||0,hc['Key pass']||0,ac['Goal']||0,ac['Key pass']||0,1));
+
+  const side=$('analyticsTeam')?.value||'home';
+  const players={};
+  S.events.filter(e=>e.team===side && e.player).forEach(e=>players[e.player]=(players[e.player]||0)+1);
+  const ranked=Object.entries(players).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const maxP=ranked.length?ranked[0][1]:1;
+  $('playerChart').innerHTML=ranked.length
+    ? svgBar('Player contributions',ranked.map(x=>({label:x[0].length>12?x[0].slice(0,11)+'…':x[0],value:x[1]})),maxP)
+    : '<div class="muted">Record player events to see individual contribution charts.</div>';
+  renderHeatmap();
+}
+function renderHeatmap(){
+  const hm=$('heatmap'); if(!hm)return;
+  hm.querySelectorAll('.heatCell').forEach(x=>x.remove());
+  const cells=Array.from({length:8},()=>Array(5).fill(0));
+  S.events.filter(e=>e.x!=null&&e.y!=null).forEach(e=>{
+    const col=Math.min(4,Math.max(0,Math.floor(e.x/20)));
+    const row=Math.min(7,Math.max(0,Math.floor(e.y/12.5)));
+    cells[row][col]++;
+  });
+  const max=Math.max(1,...cells.flat());
+  cells.forEach((row,r)=>row.forEach((v,c)=>{
+    const d=document.createElement('div');d.className='heatCell';
+    d.style.left=(c*20)+'%';d.style.top=(r*12.5)+'%';d.style.width='20%';d.style.height='12.5%';
+    const alpha=v/max;
+    d.style.background=`rgba(217,164,65,${0.08+alpha*0.78})`;
+    d.title=`${v} recorded action${v===1?'':'s'}`;
+    hm.appendChild(d);
+  }));
+}
+
+function renderReport(){const counts={};S.events.forEach(e=>{const k=(e.player||'Team')+'|'+e.type;counts[k]=(counts[k]||0)+1});$('reportBody').innerHTML=`<p><b>${esc(S.homeName)} ${S.score.home} – ${S.score.away} ${esc(S.awayName)}</b></p><p class="muted">${esc(S.competition)} · ${esc(S.venue)} · ${esc(S.date)}</p><h3>Player activity</h3><p class="muted">Open Analytics for visual charts and pitch-zone analysis.</p>`+Object.entries(counts).map(([k,v])=>`<span class="badge">${esc(k.replace('|',' · '))}: ${v}</span>`).join('')}
+function exportMatch(){const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='matchtracker-'+(S.date||'match')+'.json';a.click()}
+function exportCSV(){const rows=[['Time','Half','Team','Player','Event','X%','Y%'],...S.events.map(e=>[fmt(e.time),e.half,e.team==='home'?S.homeName:S.awayName,e.player,e.type,e.x??'',e.y??''])];const csv=rows.map(r=>r.map(v=>`"${String(v).replaceAll('"','""')}"`).join(',')).join('\\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='match-events.csv';a.click()}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+load();applyBranding();renderPossession();tab('setup');
+</script><script>if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(()=>{})}</script>
+<section id="mtCustomStatsPanel" class="panel">
+ <h2>Custom Statistics</h2>
+ <p class="muted">Choose which statistics require pitch location. Passes can record start and end locations.</p>
+ <div id="mtStatsList"></div>
+ <div style="display:grid;gap:8px;margin-top:12px">
+  <input id="mtNewStatName" placeholder="New statistic name">
+  <select id="mtNewStatGeometry">
+   <option value="point">Pitch point</option>
+   <option value="line">Start + end (pass/movement)</option>
+   <option value="none">No pitch location</option>
+  </select>
+  <button id="mtAddStat" type="button">Add statistic</button>
+ </div>
+</section>
+
+<div id="mtEventModal" hidden>
+ <div class="mt-sheet">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+   <h2 style="margin:0">Record Statistic</h2>
+   <button id="mtClose" type="button">Close</button>
+  </div>
+  <label>Team<select id="mtTeam"></select></label>
+  <label>Player<select id="mtPlayer"></select></label>
+  <label>Statistic<select id="mtStat"></select></label>
+  <div id="mtLocationWrap" hidden>
+   <p id="mtHelp">Tap the event location.</p>
+   <div id="mtPitch"><svg id="mtPassSvg" viewBox="0 0 100 100" preserveAspectRatio="none"></svg><div id="mtMarker"></div></div>
+   <button id="mtReset" type="button" style="margin-top:8px">Reset pitch selection</button>
+  </div>
+  <button id="mtSave" type="button" style="width:100%;margin-top:12px">Save Event</button>
+ </div>
+</div>
+
+<script id="final-custom-events-engine">
+(()=>{"use strict";
+const SK="matchtracker_custom_stats_final", EK="matchtracker_custom_events_final";
+const defaults=[
+{id:"successful_pass",name:"Successful Pass",geometry:"line",location:true},
+{id:"unsuccessful_pass",name:"Unsuccessful Pass",geometry:"line",location:true},
+{id:"turnover",name:"Turnover",geometry:"point",location:true},
+{id:"shot_on_target",name:"Shot on Target",geometry:"point",location:true},
+{id:"shot_off_target",name:"Shot off Target",geometry:"point",location:true}
+];
+const load=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}};
+const save=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+let stats=load(SK,defaults), events=load(EK,[]);
+let start=null,end=null;
+const $=id=>document.getElementById(id);
+
+function teams(){
+ const r=window.MatchTracker?.getState?.()||window.matchData||window.appState||window.state||window.match||{};
+ if(Array.isArray(r.teams)&&r.teams.length)return r.teams.map(x=>typeof x==="string"?x:x.name||x.id);
+ return [r.homeTeam?.name||r.homeTeam||"Home",r.awayTeam?.name||r.awayTeam||"Away"];
+}
+function players(team){
+ const roots=[window.MatchTracker?.getState?.(),window.matchData,window.appState,window.state,window.match];
+ for(const r of roots){if(!r)continue;
+  if(r.players&&Array.isArray(r.players)){let p=r.players.filter(x=>x.team===team||x.teamName===team);if(p.length)return p}
+  if(r.rosters&&!Array.isArray(r.rosters)){let p=r.rosters[team];if(Array.isArray(p))return p}
+  if(r.teams&&Array.isArray(r.teams)){let t=r.teams.find(x=>(x.name||x.id)===team);if(t&&Array.isArray(t.players))return t.players}
+ }
+ const old=$("playerSelect")||$("player");
+ return old?Array.from(old.options).filter(o=>o.value).map(o=>({id:o.value,name:o.textContent})):[];
+}
+function renderStats(){
+ const host=$("mtStatsList");if(!host)return;host.innerHTML="";
+ stats.forEach(s=>{
+  const row=document.createElement("div");row.className="mt-stat-row";
+  const n=document.createElement("strong");n.textContent=s.name;
+  const pill=document.createElement("span");pill.className="mt-pill";
+  pill.textContent=s.geometry==="line"?"Start → End":s.location?"Pitch point":"No location";
+  const b=document.createElement("button");b.type="button";
+  b.textContent=s.location?"Location ON":"Location OFF";
+  b.disabled=s.geometry==="none";
+  b.onclick=()=>{s.location=!s.location;save(SK,stats);renderStats();fillStats()};
+  const d=document.createElement("button");d.type="button";d.textContent="Delete";
+  d.onclick=()=>{stats=stats.filter(x=>x.id!==s.id);save(SK,stats);renderStats();fillStats()};
+  row.append(n,pill,b,d);host.appendChild(row);
+ });
+}
+function fillTeams(){
+ const s=$("mtTeam");s.innerHTML="";
+ teams().forEach(t=>{let o=document.createElement("option");o.value=t;o.textContent=t;s.appendChild(o)});
+ fillPlayers();
+}
+function fillPlayers(){
+ const s=$("mtPlayer");s.innerHTML="";
+ const ps=players($("mtTeam").value);
+ if(!ps.length){let o=document.createElement("option");o.value="";o.textContent="Select player in lineup";s.appendChild(o);return}
+ ps.forEach(p=>{let o=document.createElement("option");o.value=p.id||p.playerId||p.number||p.name;o.textContent=(p.number?"#"+p.number+" ":"")+(p.name||p.playerName||p.id);s.appendChild(o)});
+}
+function fillStats(){
+ const s=$("mtStat");s.innerHTML="";
+ stats.filter(x=>x.enabled!==false).forEach(x=>{let o=document.createElement("option");o.value=x.id;o.textContent=x.name;s.appendChild(o)});
+ mode();
+}
+function stat(){return stats.find(x=>x.id===$("mtStat").value)}
+function mode(){
+ const s=stat(),w=$("mtLocationWrap"),h=$("mtHelp");
+ if(!s||!s.location){w.hidden=true;return}
+ w.hidden=false;h.textContent=s.geometry==="line"?"Tap pass start, then tap pass end.":"Tap the event location.";
+ reset();
+}
+function reset(){
+ start=end=null;$("mtMarker").style.display="none";$("mtPassSvg").innerHTML="";
+}
+function point(ev){
+ const r=$("mtPitch").getBoundingClientRect();
+ return {x:Math.max(0,Math.min(100,(ev.clientX-r.left)/r.width*100)),y:Math.max(0,Math.min(100,(ev.clientY-r.top)/r.height*100))};
+}
+function draw(a,b){
+ $("mtPassSvg").innerHTML='<defs><marker id="mtArrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><polygon points="0 0,6 3,0 6"/></marker></defs><line class="mt-pass-line" x1="'+a.x+'" y1="'+a.y+'" x2="'+b.x+'" y2="'+b.y+'"/>';
+}
+function pitchClick(e){
+ const s=stat();if(!s||!s.location)return;let p=point(e);
+ if(s.geometry==="line"){if(!start){start=p;mark(p)}else{end=p;draw(start,end)}}
+ else{start=p;mark(p)}
+}
+function mark(p){let m=$("mtMarker");m.style.left=p.x+"%";m.style.top=p.y+"%";m.style.display="block"}
+function open(){
+ $("mtEventModal").hidden=false;fillTeams();fillStats();reset();
+}
+function close(){$("mtEventModal").hidden=true;reset()}
+function add(){
+ const n=$("mtNewStatName").value.trim(),g=$("mtNewStatGeometry").value;if(!n)return;
+ stats.push({id:n.toLowerCase().replace(/[^a-z0-9]+/g,"_")+"_"+Date.now(),name:n,geometry:g,location:g!=="none"});
+ save(SK,stats);$("mtNewStatName").value="";renderStats();fillStats();
+}
+function saveEvent(){
+ const s=stat(),player=$("mtPlayer").value;if(!s||!player)return alert("Select a player and statistic.");
+ if(s.location&&s.geometry==="point"&&!start)return alert("Tap the event location.");
+ if(s.location&&s.geometry==="line"&&(!start||!end))return alert("Tap the pass start and pass end.");
+ const e={id:"evt_"+Date.now()+"_"+Math.random().toString(36).slice(2),team:$("mtTeam").value,player,stat:s.name,statId:s.id,geometry:s.location?s.geometry:"none",time:new Date().toISOString(),start:s.location?start:null,end:s.location?end:null};
+ if(start&&end){let dx=end.x-start.x,dy=end.y-start.y;e.distance=Math.hypot(dx,dy);e.direction=dx>=0?"forward/right":"backward/left"}
+ events.push(e);save(EK,events);
+ document.dispatchEvent(new CustomEvent("matchtracker:customEvent",{detail:e}));
+ close();
+}
+document.addEventListener("DOMContentLoaded",()=>{
+ renderStats();
+ $("mtAddStat")?.addEventListener("click",add);$("mtTeam")?.addEventListener("change",fillPlayers);
+ $("mtStat")?.addEventListener("change",mode);$("mtPitch")?.addEventListener("click",pitchClick);
+ $("mtReset")?.addEventListener("click",reset);$("mtSave")?.addEventListener("click",saveEvent);$("mtClose")?.addEventListener("click",close);
+ const b=document.createElement("button");b.type="button";b.textContent="Custom Statistic Event";b.style.cssText="position:fixed;right:14px;bottom:14px;z-index:5000;padding:12px 16px;border-radius:999px;font-weight:700";
+ b.onclick=open;document.body.appendChild(b);
+ window.MatchTrackerCustomStats={open,stats:()=>stats,events:()=>events};
+});
+})();
+</script>
+
+<script id="analyst-dashboard-js">
+(function(){
+  const $=id=>document.getElementById(id);
+  const textOf=(el)=>el ? (el.value ?? el.textContent ?? '').trim() : '';
+  const num=(v)=>Number.isFinite(Number(v))?Number(v):0;
+
+  function findValue(ids){
+    for(const id of ids){
+      const e=$(id);
+      if(e){
+        const v=textOf(e);
+        if(v) return v;
+      }
+    }
+    return '';
+  }
+
+  function setText(id,v){const e=$(id); if(e) e.textContent=v;}
+  function setImg(id,src){
+    const e=$(id);
+    if(!e) return;
+    if(src){e.src=src;e.hidden=false;} else {e.hidden=true;}
+  }
+
+  function getBranding(){
+    try{return JSON.parse(localStorage.getItem('matchtracker_branding_v1')||'{}')}catch(e){return{}}
+  }
+  function getPoss(){
+    try{return JSON.parse(localStorage.getItem('matchtracker_possession_v1')||'{"home":0,"away":0}') }catch(e){return{home:0,away:0}}
+  }
+  function getEvents(){
+    try{return JSON.parse(localStorage.getItem('matchtracker_custom_events_final')||'[]')}catch(e){return[]}
+  }
+  function getStats(){
+    try{return JSON.parse(localStorage.getItem('matchtracker_custom_stats_final')||'[]')}catch(e){return[]}
+  }
+
+  function refresh(){
+    const b=getBranding(), p=getPoss(), ev=getEvents(), stats=getStats(), state=window.MatchTracker?.getState?.();
+
+    const home=state?.homeName||findValue(['homeTeam','homeTeamName','mtHomeTeam','home']);
+    const away=state?.awayName||findValue(['awayTeam','awayTeamName','mtAwayTeam','away']);
+    if(home) setText('mtDashHomeName',home);
+    if(away) setText('mtDashAwayName',away);
+
+    setImg('mtDashHomeCrest',b.homeCrest||b.home||'');
+    setImg('mtDashAwayCrest',b.awayCrest||b.away||'');
+
+    if(b.homeColour) document.documentElement.style.setProperty('--dash-home',b.homeColour);
+    if(b.awayColour) document.documentElement.style.setProperty('--dash-away',b.awayColour);
+
+    const h=num(p.home), a=num(p.away), total=h+a;
+    const hp=total?Math.round(h/total*100):50, ap=100-hp;
+    setText('mtDashHomePos',hp+'%'); setText('mtDashAwayPos',ap+'%');
+    const hf=$('mtDashHomePosFill'), af=$('mtDashAwayPosFill');
+    if(hf){hf.style.width=hp+'%';hf.style.background=b.homeColour||'var(--dash-text)';}
+    if(af){af.style.width=ap+'%';af.style.background=b.awayColour||'#94a3b8';}
+
+    const passes=ev.filter(x=>/pass/i.test(String(x.stat||''))).length;
+    const shots=ev.filter(x=>/shot/i.test(String(x.stat||''))).length;
+    const turnovers=ev.filter(x=>/turnover/i.test(String(x.stat||''))).length;
+    setText('mtDashPasses',passes);
+    setText('mtDashShots',shots);
+    setText('mtDashTurnovers',turnovers);
+    setText('mtDashEvents',ev.length);
+
+    // Try to mirror the existing score/clock if the original UI exposes common IDs.
+    const st=window.MatchTracker?.getState?.();
+    if(st){setText('mtDashHomeScore',st.score.home);setText('mtDashAwayScore',st.score.away);setText('mtDashClock',fmt(st.seconds));setText('mtDashHalf',(st.half===1?'1st':st.half===2?'2nd':st.half+'th')+' Half');setText('mtDashStatus',st.running?'Live':'Ready');}
+    const scoreCandidates=[
+      ['mtDashHomeScore',['homeScore','homeGoals','scoreHome']],
+      ['mtDashAwayScore',['awayScore','awayGoals','scoreAway']],
+      ['mtDashClock',['matchClock','gameClock','clock','timer']],
+      ['mtDashHalf',['half','currentHalf','period']]
+    ];
+    for(const [target,ids] of scoreCandidates){
+      const v=findValue(ids);
+      if(v) setText(target,v);
+    }
+
+    const status=findValue(['matchStatus','gameStatus','status']);
+    if(status) setText('mtDashStatus',status);
+  }
+
+  // Copy the first visible pitch into the dashboard when possible.
+  function syncPitch(){
+    const host=$('mtDashPitchHost');
+    if(!host || host.dataset.ready==='1') return;
+    const pitch=document.querySelector('#pitchBoard');
+    if(pitch){
+      const clone=pitch.cloneNode(true);
+      clone.style.margin='0';
+      clone.style.maxWidth='100%';
+      host.appendChild(clone);
+      host.dataset.ready='1';
+    }
+  }
+
+  refresh();
+  syncPitch();
+  setInterval(refresh,1000);
+  setInterval(syncPitch,1500);
+
+  window.addEventListener('storage',refresh);
+  window.addEventListener('matchtracker:customEvent',refresh);
+  window.addEventListener('matchtracker:branding',refresh);
+  window.addEventListener('matchtracker:possession',refresh);
+})();
+</script>
+
+
+<script id="mt-professional-report-js">
+(function(){
+  const $=id=>document.getElementById(id);
+  const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const get=(key, fallback)=>{try{const v=JSON.parse(localStorage.getItem(key));return v??fallback}catch(e){return fallback}};
+  const branding=()=>get('matchtracker_branding_v1',{});
+  const events=()=>get('matchtracker_custom_events_final',[]);
+  const stats=()=>get('matchtracker_custom_stats_final',[]);
+  const poss=()=>get('matchtracker_possession_v1',{home:0,away:0});
+
+  function read(ids){
+    for(const id of ids){const e=$(id);if(e){const v=(e.value??e.textContent??'').trim();if(v)return v}}
+    return '';
+  }
+  function teamNames(){const st=window.MatchTracker?.getState?.();return {home:st?.homeName||read(['homeTeam','homeTeamName','mtHomeTeam'])||'Home Team',away:st?.awayName||read(['awayTeam','awayTeamName','mtAwayTeam'])||'Away Team'};}
+  function crest(team){
+    const b=branding();
+    return team==='home'?(b.homeCrest||''):(b.awayCrest||'');
+  }
+  function data(){
+    const ev=events();
+    const p=poss();
+    const s=stats();
+    const teams=teamNames();
+    const home=ev.filter(e=>String(e.team).toLowerCase()==='home');
+    const away=ev.filter(e=>String(e.team).toLowerCase()==='away');
+    const statMap={};
+    ev.forEach(e=>{const n=e.stat||'Uncategorised';statMap[n]=(statMap[n]||0)+1});
+    const playerMap={};
+    ev.forEach(e=>{
+      const key=(e.player||'Unassigned')+'|'+(e.team||'');
+      if(!playerMap[key])playerMap[key]={player:e.player||'Unassigned',team:e.team||'',events:0,passes:0,shots:0,turnovers:0};
+      const x=playerMap[key];x.events++;
+      if(/pass/i.test(e.stat||''))x.passes++;
+      if(/shot/i.test(e.stat||''))x.shots++;
+      if(/turnover/i.test(e.stat||''))x.turnovers++;
+    });
+    return {ev,p,s,teams,home,away,statMap,players:Object.values(playerMap)};
+  }
+
+  function fmtTime(sec){
+    sec=Math.max(0,Math.round(Number(sec)||0));
+    const h=Math.floor(sec/3600),m=Math.floor((sec%3600)/60),s=sec%60;
+    return h?`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }
+
+  function bar(label,value,max,cls){
+    const pct=max?Math.min(100,value/max*100):0;
+    return `<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:10px;font-weight:800"><span>${esc(label)}</span><span>${value}</span></div><div class="mt-rp-bar"><div class="mt-rp-bar-fill ${cls||''}" style="width:${pct}%;background:#0f172a"></div></div></div>`;
+  }
+
+  function chart(title,rows){
+    const max=Math.max(1,...rows.map(r=>r.value));
+    const W=760,H=260,L=150,R=20,T=25,B=30;
+    const iw=W-L-R, ih=H-T-B, bw=Math.min(34,iw/Math.max(1,rows.length)-10);
+    let svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(title)}"><line x1="${L}" y1="${T}" x2="${L}" y2="${H-B}" stroke="#94a3b8"/><line x1="${L}" y1="${H-B}" x2="${W-R}" y2="${H-B}" stroke="#94a3b8"/>`;
+    const n=rows.length;
+    rows.forEach((r,i)=>{
+      const y=T+(i+0.5)*(ih/Math.max(1,n));
+      const w=(r.value/max)*iw;
+      svg+=`<text x="${L-8}" y="${y+4}" text-anchor="end" font-size="11" fill="#334155">${esc(r.label).slice(0,24)}</text>`;
+      svg+=`<rect x="${L}" y="${y-10}" width="${w}" height="20" rx="5" fill="#0f172a"/>`;
+      svg+=`<text x="${L+w+7}" y="${y+4}" font-size="11" font-weight="700" fill="#0f172a">${r.value}</text>`;
+    });
+    svg+=`</svg>`;
+    return `<div class="mt-rp-chart"><div class="mt-rp-chart-title">${esc(title)}</div>${svg}</div>`;
+  }
+
+  function footer(){
+    return `<div class="mt-rp-footer"><span>MatchTracker • Professional Match Report</span><span>Generated ${new Date().toLocaleString()}</span></div>`;
+  }
+
+  function pageHeader(d,subtitle){
+    return `<div class="mt-rp-header">
+      <div class="mt-rp-brand">
+        ${d.crest?`<img class="mt-rp-crest" src="${d.crest}" alt="">`:''}
+        <div><div class="mt-rp-title">Match Report</div><div class="mt-rp-sub">${esc(subtitle)}</div></div>
+      </div>
+      <div class="mt-rp-meta">${esc(d.teams.home)} vs ${esc(d.teams.away)}<br>${new Date().toLocaleDateString()}</div>
+    </div>`;
+  }
+
+  function makeReport(executiveOnly=false){
+    const d=data();
+    const totalPoss=(Number(d.p.home)||0)+(Number(d.p.away)||0);
+    const hp=totalPoss?Math.round(d.p.home/totalPoss*100):50, ap=100-hp;
+    const totalEvents=d.ev.length;
+    const passes=d.ev.filter(e=>/pass/i.test(e.stat||'')).length;
+    const shots=d.ev.filter(e=>/shot/i.test(e.stat||'')).length;
+    const turnovers=d.ev.filter(e=>/turnover/i.test(e.stat||'')).length;
+    const status=read(['matchStatus','gameStatus','status'])||'Match analysis';
+    const scoreH=read(['homeScore','homeGoals','scoreHome'])||'0';
+    const scoreA=read(['awayScore','awayGoals','scoreAway'])||'0';
+
+    let out='';
+    out+=`<div class="mt-rp-page">${pageHeader(d,'Executive match analysis')}
+      <div class="mt-rp-score">
+        <div><div class="mt-rp-team">${esc(d.teams.home)}</div></div>
+        <div><div class="mt-rp-score-num">${esc(scoreH)} – ${esc(scoreA)}</div><div class="mt-rp-small">${esc(status)}</div></div>
+        <div><div class="mt-rp-team">${esc(d.teams.away)}</div></div>
+      </div>
+      <div class="mt-rp-kpis">
+        <div class="mt-rp-kpi"><div class="mt-rp-kpi-value">${totalEvents}</div><div class="mt-rp-kpi-label">Recorded events</div></div>
+        <div class="mt-rp-kpi"><div class="mt-rp-kpi-value">${passes}</div><div class="mt-rp-kpi-label">Pass events</div></div>
+        <div class="mt-rp-kpi"><div class="mt-rp-kpi-value">${shots}</div><div class="mt-rp-kpi-label">Shot events</div></div>
+        <div class="mt-rp-kpi"><div class="mt-rp-kpi-value">${turnovers}</div><div class="mt-rp-kpi-label">Turnovers</div></div>
+      </div>
+      <div class="mt-rp-section"><h2>Possession</h2>
+        ${bar(d.teams.home,hp,100)}${bar(d.teams.away,ap,100)}
+        <div class="mt-rp-small">Tracked possession: ${fmtTime(d.p.home)} ${esc(d.teams.home)} • ${fmtTime(d.p.away)} ${esc(d.teams.away)}</div>
+      </div>
+      <div class="mt-rp-section"><h2>Event profile</h2>
+        ${chart('Recorded events by category',Object.entries(d.statMap).map(([label,value])=>({label,value})).sort((a,b)=>b.value-a.value))}
+      </div>
+      ${footer()}</div>`;
+
+    if(!executiveOnly){
+      const rows=d.players.sort((a,b)=>b.events-a.events).map(x=>`<tr><td>${esc(x.player)}</td><td>${esc(x.team)}</td><td class="num">${x.events}</td><td class="num">${x.passes}</td><td class="num">${x.shots}</td><td class="num">${x.turnovers}</td></tr>`).join('');
+      out+=`<div class="mt-rp-page">${pageHeader(d,'Player and team activity')}
+        <div class="mt-rp-section"><h2>Player contribution</h2>
+        <table class="mt-rp-table"><thead><tr><th>Player</th><th>Team</th><th class="num">Events</th><th class="num">Passes</th><th class="num">Shots</th><th class="num">Turnovers</th></tr></thead><tbody>${rows||'<tr><td colspan="6">No player events recorded.</td></tr>'}</tbody></table></div>
+        <div class="mt-rp-grid2">
+          <div class="mt-rp-section"><h2>Home activity</h2>${chart('Home events by category',Object.entries(d.statMap).map(([label,v])=>({label,value:d.home.filter(e=>(e.stat||'')===label).length})).filter(x=>x.value))}</div>
+          <div class="mt-rp-section"><h2>Away activity</h2>${chart('Away events by category',Object.entries(d.statMap).map(([label,v])=>({label,value:d.away.filter(e=>(e.stat||'')===label).length})).filter(x=>x.value))}</div>
+        </div>
+        ${footer()}</div>`;
+
+      const eventRows=d.ev.map(e=>`<tr><td>${esc(e.time||'')}</td><td>${esc(e.team||'')}</td><td>${esc(e.player||'')}</td><td>${esc(e.stat||'')}</td><td>${e.start?`${Math.round(e.start.x)}, ${Math.round(e.start.y)}`:''}</td><td>${e.end?`${Math.round(e.end.x)}, ${Math.round(e.end.y)}`:''}</td></tr>`).join('');
+      out+=`<div class="mt-rp-page">${pageHeader(d,'Complete recorded event log')}
+        <div class="mt-rp-section"><h2>All recorded events</h2>
+        <table class="mt-rp-table"><thead><tr><th>Time</th><th>Team</th><th>Player</th><th>Statistic</th><th>Start</th><th>End</th></tr></thead><tbody>${eventRows||'<tr><td colspan="6">No events recorded.</td></tr>'}</tbody></table></div>
+        <div class="mt-rp-section"><h2>Pass analysis</h2>${chart('Pass activity by team',[
+          {label:d.teams.home,value:d.home.filter(e=>/pass/i.test(e.stat||'')).length},
+          {label:d.teams.away,value:d.away.filter(e=>/pass/i.test(e.stat||'')).length}
+        ])}</div>
+        ${footer()}</div>`;
+    }
+    return out;
+  }
+
+  function printReport(executive){
+    const root=$('mtReportPrintRoot');
+    if(!root)return;
+    root.innerHTML=makeReport(executive);
+    document.body.classList.add('mt-printing');
+    setTimeout(()=>{
+      window.print();
+      setTimeout(()=>document.body.classList.remove('mt-printing'),800);
+    },150);
+  }
+
+  $('mtGenerateReport')?.addEventListener('click',()=>printReport(false));
+  $('mtGenerateSummaryReport')?.addEventListener('click',()=>printReport(true));
+
+  // Expose for future integrations.
+  window.MatchTrackerReports={generate:()=>printReport(false),summary:()=>printReport(true)};
+})();
+</script>
+
+</body></html>

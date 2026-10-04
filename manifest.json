@@ -1,0 +1,10 @@
+{
+  "name": "MatchTracker Soccer",
+  "short_name": "MatchTracker",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#08111d",
+  "theme_color": "#0b1220",
+  "orientation": "portrait",
+  "icons": []
+}
